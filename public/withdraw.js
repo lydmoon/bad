@@ -1,109 +1,123 @@
 function Withdraw() {
-    const[balance, setBalance] = React.useState("");
-    const [show, setShow] = React.useState(true);
-    const [status, setStatus] = React.useState("");
-    const ctx = React.useContext(UserContext);
-    const[loaded, setLoaded] = React.useState(false);
-  
-    React.useEffect(() => {
-      fetch(`/account/findOne/${ctx.email}`)
-      .then(response => response.text())
-      .then(text => {
-        try {
-          const data = JSON.parse(text)
-          setBalance(data.balance)
-          console.log('JSON:', data)
-        } catch (err) {
-          console.log('err:', text)
+  const [show, setShow] = React.useState(true);
+  const [status, setStatus] = React.useState('');
+  const [amount, setAmount] = React.useState('');
+  const ctx = React.useContext(UserContext);
+
+
+  const [user, setUser] = React.useState({
+    email: ctx.email,
+    balance: 0, 
+  });
+
+  React.useEffect(() => {
+    fetch(`/api/usercontext/${ctx.email}`)
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
         }
+        return response.json();
       })
-      setLoaded(true);
-    },[loaded])
-  
-    return (
-      <>
-      <div className="hi-msg">User: {ctx.user}</div> : <div></div>
-      <Card
-        txtcolor="white"
-        bgcolor="dark"
-        header="Withdraw"
-        status={status}
-        body={
-          show ? (
-            <WithdrawForm setShow={setShow} setStatus={setStatus}  />
-          ) : (
-            <WithdrawMessage setShow={setShow} setStatus={setStatus}/>
-          )
+      .then((data) => {
+        setUser((prevUser) => ({ ...prevUser, balance: data.balance })); 
+      })
+      .catch((error) => {
+        console.error('Error fetching balance:', error);
+      });
+  }, [ctx.email]);
+
+  const handleWithdraw = () => {
+    if (!validate(Number(amount), user.balance)) {
+      return;
+    }
+    const newBalance = user.balance - Number(amount);
+    fetch('/api/usercontext/updateBalance', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email: user.email, newBalance }),
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
         }
-      />
-      </>
-    );
-  
-    function WithdrawForm() {
-      const [withdraw, setWithdraw] = React.useState("");
-      const [disabled, setDisabled] = React.useState(true);
-  
-      function handleWithdraw() {
-        if (!validate(Number(withdraw), balance)) return;
-  
-        fetch(`/account/update/${ctx.email}/-${Number(withdraw)}`)
-        .then(response => response.text())
-        .then(text => {
-          try {
-            const data = JSON.parse(text);
-            setShow(false);
-            setAmount(data.amount);
-            console.log('JSON:', data);
-          } catch(err) {
-            console.log('err:', text);
-          }
-        });
-        setBalance(balance - withdraw);
-      }
-  
-      return (
-        <>
-          <span className="balance-information">Account Balance ${balance}</span>
-          <br />
-          Withdrawal Amount
-          <input type="input" className="form-control" id="withdraw" placeholder="Withdrawal Amount" value={withdraw} onChange={(e) => {
-              setWithdraw(e.currentTarget.value);
-              setDisabled(false);
-            }}
-          />
-          <br />
-          <button type="submit" className="btn btn-light" onClick={handleWithdraw} disabled={disabled} >Withdraw</button>
-        </>
-      );
+        return response.json();
+      })
+      .then((data) => {
+        console.log(data.message);
+        setUser((prevUser) => ({ ...prevUser, balance: newBalance }));
+        setAmount('');
+        setStatus('Withdrawal successful');
+      })
+      .catch((error) => {
+        console.error('Error updating balance:', error);
+      });
+  };
+
+  function validate(withdraw, balance) {
+    if (isNaN(withdraw)) {
+      setStatus('Error: did not enter a valid number');
+      setTimeout(() => setStatus(''), 3000);
+      return false;
     }
-  
-    function WithdrawMessage(props) {
-      return (
-        <>
-          <span className="balance-information">Account Balance ${balance}</span>
-          <br />
-          <h5>Withdrawal Successful</h5>
-          <button type="submit" className="btn btn-light" onClick={() => props.setShow(true)}>Make another withdrawal</button>
-        </>
-      );
+    if (withdraw > balance) {
+      setStatus('Error: Insufficient funds');
+      setTimeout(() => setStatus(''), 3000);
+      return false;
     }
-  
-    function validate(withdraw, balance) {
-      if (isNaN(withdraw)) {
-        setStatus("Error: did not enter a valid number");
-        setTimeout(() => setStatus(""), 3000);
-        return false;
-      }
-      if (withdraw > balance) {
-        setStatus("Error: Insuffienct funds");
-        setTimeout(() => setStatus(""), 3000);
-        return false;
-      }
-      if (withdraw < 1) {
-        setStatus("Error: Lowest withdrawl amount is $1");
-        setTimeout(() => setStatus(""), 3000);
-        return false;
-      }
-      return true;
+    if (withdraw < 1) {
+      setStatus('Error: Lowest withdrawal amount is $1');
+      setTimeout(() => setStatus(''), 3000);
+      return false;
     }
+    return true;
   }
+
+  return (
+    <Card
+      bgcolor="success"
+      header="Withdraw"
+      status={status}
+      body={
+        show ? (
+          <>
+            Amount<br />
+            <input
+              type="number"
+              className="form-control"
+              placeholder="Enter amount"
+              value={amount}
+              onChange={(e) => setAmount(e.currentTarget.value)}
+            />
+            <br />
+            <button
+              type="submit"
+              className="btn btn-light"
+              onClick={handleWithdraw}
+            >
+              Withdraw
+            </button>
+          </>
+        ) : (
+          <WithdrawMsg setShow={setShow} />
+        )
+      }
+    />
+  );
+}
+
+function WithdrawMsg(props) {
+  return (
+    <>
+      <h5>Success</h5>
+      <button
+        type="submit"
+        className="btn btn-light"
+        onClick={() => props.setShow(true)}
+      >
+        Withdraw again
+      </button>
+    </>
+  );
+}

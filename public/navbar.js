@@ -39,14 +39,9 @@ function NavBar() {
                 <span title="Withdraw your money">Withdraw</span>
               </a>
             </li>
-            <li className="nav-item" id='nav-balance'>
-              <a className="nav-link" href="#/balance/">
-                <span title="See current balance">Balance</span>
-              </a>
-            </li>
             <li className="nav-item" id='nav-allData'>
               <a className="nav-link" href="#/alldata/">
-                <span title="See all data">User Data</span>
+                <span title="See all data">All data</span>
               </a>
             </li>
             <li className="nav-item" id='nav-logout'>

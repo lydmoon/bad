@@ -7,17 +7,8 @@ function Home() {
     const navLogin            = document.getElementById('nav-login');
     const navDeposit          = document.getElementById('nav-deposit');
     const navWithdraw         = document.getElementById('nav-withdraw');
-    const navBalance          = document.getElementById('nav-balance');
     const navAllData          = document.getElementById('nav-allData');
     const navLogout           = document.getElementById('nav-logout');
-
-    navCreateAccount.style.display  = "block";
-    navLogin.style.display          = "block";
-    navDeposit.style.display        = "none";
-    navWithdraw.style.display       = "none";
-    navBalance.style.display        = "none";
-    navAllData.style.display        = "none";
-    navLogout.style.display         = "none";
     },[])
 
     const centerStyle = {
